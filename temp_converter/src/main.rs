@@ -1,40 +1,33 @@
-use std::io;
+use std::env;
 
 fn main() {
-    println!("-----| Temp converter |-----\n");
+    let command = env::args()
+        .nth(1)
+        .expect("tempconvert must be called with at least 1 argument");
 
-    println!("Select conversion type:");
-    println!("    F) Convert to Fahrenheit");
-    println!("    C) Convert to Celsius");
+    // Show help and exit
+    if &command == "--help" || &command == "-h" {
+        println!("Help:");
 
-    let conversion_type = get_user_input("Enter your selection:");
-    let conversion_type: String = match conversion_type.trim() {
-        "F" => String::from("fahrenheit"),
-        "C" => String::from("celsius"),
-        _ => String::from("celsius"),
+        return;
+    }
+
+    let value_to_convert = env::args()
+        .nth(2)
+        .expect("tempconvert must be provided a value to convert");
+
+    let parsed_value: f32 = value_to_convert
+        .trim()
+        .parse()
+        .expect("tempconvert must be provided a valid number");
+
+    let result: f32 = match command.as_str() {
+        "-f" | "--fahrenheit" => convert_to_fahrenheit(parsed_value),
+        "-c" | "--celsius" => convert_to_celsius(parsed_value),
+        _ => 0.0,
     };
 
-    let temp_value = get_user_input("Enter the temperature value to convert:");
-    let temp_value: f32 = temp_value.trim().parse().expect("Failed to convert number");
-
-    let result: f32 = match conversion_type.as_str() {
-        "celsius" => convert_to_celsius(temp_value),
-        "fahrenheit" => convert_to_fahrenheit(temp_value),
-        _ => convert_to_celsius(temp_value),
-    };
-
-    println!("Converted temp value: {}", result);
-}
-
-fn get_user_input(msg: &str) -> String {
-    println!("{}", msg);
-    let mut result = String::new();
-
-    io::stdin()
-        .read_line(&mut result)
-        .expect("Failed to read line");
-
-    result
+    println!("Result: {}", result);
 }
 
 fn convert_to_fahrenheit(val: f32) -> f32 {
