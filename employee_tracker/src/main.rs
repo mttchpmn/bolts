@@ -5,14 +5,13 @@ fn main() {
     let mut dm = DepartmentMap::new();
 
     dm.add_to_department("engineering", "Alex Henderson");
+    dm.add_to_department("engineering", "Carl Pattie");
     dm.add_to_department("engineering", "Matt Chapman");
 
     dm.add_to_department("product", "Leonie Wise");
 
     dm.list_all_departments();
 }
-
-// fn get_user_command() {}
 
 #[derive(Debug)]
 struct DepartmentMap {
@@ -40,8 +39,8 @@ impl DepartmentMap {
 
     fn list_all_departments(&self) {
         for (key, value) in &self.map {
-            println!("Department: {}", key);
-            println!("Employees: {}", value.join(", "));
+            println!("{}", key.to_uppercase());
+            println!("\t{}", value.join(", "));
         }
     }
 }
