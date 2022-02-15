@@ -34,7 +34,7 @@ fn main() {
     let mut encoder = BinEncoder::new(&mut request_as_bytes);
     msg.emit(&mut encoder).unwrap();
 
-    let localhost = UdpSocket::bind("0.0.0.0").expect("Cannot bind to local socket");
+    let localhost = UdpSocket::bind("0.0.0.0:0").expect("Cannot bind to local socket");
     let timeout = Duration::from_secs(3);
     localhost.set_read_timeout(Some(timeout)).unwrap();
     localhost.set_nonblocking(false).unwrap();
