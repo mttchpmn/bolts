@@ -28,7 +28,7 @@ fn main() {
 
     let domain_name = url.host_str().expect("Error: Domain name required");
 
-    let dns_server: std::net::Ipv4Addr = dns_server_text.parse().expect("Error: Unable to parse <dns-server> as an IPv4 address");
+    let _dns_server: std::net::Ipv4Addr = dns_server_text.parse().expect("Error: Unable to parse <dns-server> as an IPv4 address");
 
     let addr = dns::resolve(dns_server_text, domain_name).unwrap().unwrap();
 
