@@ -1,7 +1,9 @@
-use std::arch::x86_64::_bextr_u32;
-use std::env;
-use std::env::args;
-use std::fmt::format;
+use rayon::prelude::*;
+use crossbeam::channel::{unbounded};
+
+use std;
+use std::{env, thread};
+use crossbeam::RecvError;
 use svg::Document;
 use svg::node::element::path::{Command, Data, Position};
 use svg::node::element::{Path, Rectangle};
@@ -111,23 +113,62 @@ impl Artist {
     }
 }
 
-fn parse(input: &str) -> Vec<Operation> {
-    let mut steps = Vec::<Operation>::new();
+enum Work {
+    Task((usize, u8)),
+    Finished
+}
 
-    for byte in input.bytes() {
-        let step = match byte {
-            b'0' => Home,
-            b'1'..=b'9' => {
-                let distance = (byte - 0x30) as isize;
-                Forward(distance * (HEIGHT / 10))
-            }
-            b'a' | b'b' | b'c' => TurnLeft,
-            b'd' | b'e' | b'f' => TurnRight,
-            _ => Noop(byte)
-        };
-        steps.push(step);
+fn parse_byte(byte: u8) -> Operation {
+    match byte {
+        b'0' => Home,
+        b'1'..=b'9' => {
+            let distance = (byte - 0x30) as isize;
+            Forward(distance * (HEIGHT / 10))
+        }
+        b'a' | b'b' | b'c' => TurnLeft,
+        b'd' | b'e' | b'f' => TurnRight,
+        _ => Noop(byte)
     }
-    steps
+}
+
+fn parse(input: &str) -> Vec<Operation> {
+    let n_threads = 2;
+    let (todo_tx, todo_rx) = unbounded();
+    let (results_tx, results_rx) = unbounded();
+    let mut n_bytes = 0;
+    for (i, byte) in input.bytes().enumerate() {
+        todo_tx.send(Work::Task((i, byte))).unwrap();
+        n_bytes +=1;
+    }
+
+    for _ in 0..n_threads {
+        todo_tx.send(Work::Finished).unwrap();
+    }
+
+    for _ in 0..n_threads {
+        let todo = todo_rx.clone();
+        let results = results_tx.clone();
+
+        thread::spawn(move || {
+            loop {
+                let task = todo.recv();
+                let result = match task {
+                    Ok(Work::Task((i, byte))) => (i, parse_byte(byte)),
+                    Ok(Work::Finished) => break,
+                    Err(_) => break
+                };
+                results.send(result).unwrap();
+            }
+        });
+    }
+
+    let mut ops = vec![Noop(0); n_bytes];
+    for _ in 0..n_bytes {
+        let (i, op) = results_rx.recv().unwrap();
+        ops[i] = op;
+    }
+
+    ops
 }
 
 fn convert(operations: &Vec<Operation>) -> Vec<Command> {
